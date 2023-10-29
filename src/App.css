@@ -1,5 +1,6 @@
 body{
   background: slategray;
+  font-family: poppins !important;
 }
 
 ::-webkit-scrollbar{

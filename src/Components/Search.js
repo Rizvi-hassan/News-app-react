@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
 import Loading from "./Loading";
 import NewsItem from "./NewsItem";
 import PropTypes from 'prop-types';
@@ -6,71 +6,46 @@ import InfiniteScroll from "react-infinite-scroll-component";
 
 
 
-export class News extends Component {
-    static defaultProps = {
-        pageSize: 9,
-        country: 'in',
-        question: 'trending'
-    }
-    static propTypes = {
-        pageSize: PropTypes.number,
-        country: PropTypes.string,
-    }
-
-    constructor() {
-        super()
-        this.state = {
-            articles: [],
-            loading: true,
-            page: 1,
-            totalPages: 1
-        }
-    }
-
-    async componentDidMount() {
-        let url = `https://newsapi.org/v2/everything?q=${this.props.question}&searchIn=title,description,content&sortBy=relevence&apiKey=d0a6aad050a4441c84c4308a0ac2c97c&page=${this.state.page}&pageSize=${this.props.pageSize}`;
-        console.log(url)
+const News = (props)=> {
+    const [articles, setArticles] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    
+    const updatePage = async (curpage) => {
+        let url = `https://newsapi.org/v2/everything?q=${props.question}&searchIn=title,description,content&sortBy=popularity&apiKey=${props.apiKey}&page=${curpage}&pageSize=${props.pageSize}`;
+        setLoading(true)
         let data = await fetch(url)
         let parsedData = await data.json()
-        this.setState({
-            articles: parsedData.articles,
-            totalPages: Math.ceil(parsedData.totalResults / 20),
-            loading: false
-        })
+        setArticles(articles.concat(parsedData.articles))
+        setPage(curpage)
+        setLoading(false)
+        setTotalPages( Math.ceil(parsedData.totalResults / 20))
     }
+    useEffect(()=> {
+        updatePage(1)
+    }, [])
+    
 
-    upadatePage = async (curpage) => {
-        let url = `https://newsapi.org/v2/everything?q=${this.props.question}&searchIn=title,description,content&sortBy=popularity&apiKey=d0a6aad050a4441c84c4308a0ac2c97c&page=${curpage}&pageSize=${this.props.pageSize}`;
-        this.setState({ loading: true })
-        let data = await fetch(url)
-        let parsedData = await data.json()
-        this.setState({
-            articles: this.state.articles.concat(parsedData.articles),
-            page: curpage,
-            loading: false
-        })
-    }
-
-    capitalise = (str) => {
+    const capitalise = (str) => {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    fetchMoreData = async () => {
-        this.upadatePage(this.state.page + 1)
+    const fetchMoreData = async () => {
+        updatePage(page + 1)
     }
-    render() {
         return (<div>
             <InfiniteScroll
-                dataLength={this.state.articles.length}
-                next={this.fetchMoreData}
-                hasMore={this.state.page < this.state.totalPages}
-                endMessage={!this.state.loading && <p className="text-body-primary" style={{ display: 'block', width: "100px", margin: '10px auto', fontWeight: 'bold', textDecoration: 'underline' }}>End of page</p>}
+                dataLength={articles.length}
+                next={fetchMoreData}
+                hasMore={page < totalPages}
+                endMessage={!loading && <p className="text-body-primary" style={{ display: 'block', width: "100px", margin: '10px auto', fontWeight: 'bold', textDecoration: 'underline' }}>End of page</p>}
             >
 
                 <div className='container'>
-                    <h2 className="text-center text-light" style={{ marginTop: '80px' }} >Search Result- {this.props.question } </h2>
+                    <h2 className="text-center text-light" style={{ marginTop: '80px' }} >Search Result- {capitalise(props.question )} </h2>
                     <div className="row justify-content-start">
-                        {this.state.articles && this.state.articles.map((element) => {
+                        {articles && articles.map((element) => {
                             return <div key={element.url} className="col-4">
                                 <NewsItem
                                     title={element.title ? element.title.slice(0, 80) : ""}
@@ -84,12 +59,20 @@ export class News extends Component {
                             </div>
                         })}
                     </div>
-                    {this.state.loading && <Loading type="smallscreen" />}
+                    {loading && <Loading />}
                 </div>
             </InfiniteScroll>
         </div>
         );
-    }
+}
+News.defaultProps = {
+    pageSize: 9,
+    country: 'in',
+    question: 'trending'
+}
+News.propTypes = {
+    pageSize: PropTypes.number,
+    country: PropTypes.string,
 }
 
 export default News;
